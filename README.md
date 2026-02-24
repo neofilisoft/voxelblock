@@ -2,11 +2,8 @@
 
 A Minecraft-inspired voxel engine built with [Ursina](https://www.ursinaengine.org/).
 
-## Quick Start
-
 ```bash
-pip install -r requirements.txt
-python main.py
+g++
 ```
 
 ## Controls
