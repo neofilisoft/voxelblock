@@ -1,4 +1,4 @@
-# VoxelBlock Engine v0.4
+# VoxelBlock Engine v0.8
 
 A Minecraft-inspired voxel engine built with [Ursina](https://www.ursinaengine.org/).
 
