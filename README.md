@@ -14,7 +14,7 @@ Current direction:
 
 ### Requirements
 - `.NET SDK 8`
-- `CMake >= 3.22`
+- `CMake 3.22`
 - `Visual Studio 2022 Build Tools` (Desktop development with C++)
 - `Ninja` (optional)
 
