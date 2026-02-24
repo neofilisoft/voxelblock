@@ -36,21 +36,70 @@ python main.py
 ## Project Structure
 
 ```
-VoxelBlock-Engine/
-├── main.py              # Entry point
-├── requirements.txt
-├── README.md
-├── assets/
-│   └── textures/        # Drop custom PNGs here
-├── mods/                # Lua mods go here
-│   └── example.lua
-└── core/
-    ├── __init__.py
-    ├── voxel.py         # Voxel block class + color registry
-    ├── world.py         # Perlin terrain + chunk generation
-    ├── player.py        # First-person controller + input
-    ├── inventory.py     # Hotbar & inventory UI
-    └── mod_loader.py    # Lua modding system
+VoxelBlock/
+├─ CMakeLists.txt                          # Native build (C++ engine/modules)
+├─ VoxelBlock.sln                          # .NET solution (Editor + Bridge)
+│
+├─ thirdparty/     
+│  ├─ README.md
+│  └─ physics/     
+│     └─ README.md
+│
+├─ include/      
+│  ├─ engine.hpp
+│  ├─ api/
+│  │  └─ voxelblock_capi.h        
+│  ├─ renderer/
+│  │  ├─ camera.hpp
+│  │  ├─ mesh.hpp
+│  │  ├─ renderer.hpp
+│  │  ├─ shader.hpp
+│  │  └─ window.hpp
+│  ├─ scripting/
+│  │  └─ lua_runtime.hpp
+│  └─ ecs/    
+│     ├─ entity.hpp
+│     ├─ components.hpp
+│     ├─ registry.hpp
+│     └─ systems.hpp
+│
+├─ src/  
+│  ├─ engine.cpp
+│  ├─ api/
+│  │  └─ voxelblock_capi.cpp
+│  ├─ renderer/
+│  │  ├─ camera.cpp
+│  │  ├─ mesh.cpp
+│  │  ├─ renderer.cpp
+│  │  ├─ shader.cpp
+│  │  └─ window.cpp
+│  └─ scripting/
+│     └─ lua_runtime.cpp
+│
+├─ bindings/
+│  └─ python/
+│     └─ voxelblock_py.cpp 
+│
+├─ VoxelBlock.Bridge/ 
+│  ├─ VoxelBlock.Bridge.csproj
+│  ├─ VoxelBlockNative.cs
+│  └─ VoxelBlockEngine.cs
+│
+├─ VoxelBlock.Editor/  
+│  ├─ VoxelBlock.Editor.csproj
+│  ├─ Program.cs
+│  ├─ App.axaml
+│  ├─ App.axaml.cs
+│  ├─ MainWindow.axaml
+│  ├─ MainWindow.axaml.cs
+│  ├─ Controls.cs
+│  ├─ SceneEditing.cs   
+│  ├─ ProjectPipelines.cs    
+│  └─ OpenGlViewport.cs              
+│
+├─ mods/                               
+   └─ mystuff.lua                               
+
 ```
 
 ## Adding Mods
