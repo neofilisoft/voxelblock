@@ -1,71 +1,116 @@
-# VoxelBlock Engine
+# VoxelBlock
 
-A Minecraft-inspired voxel engine built with [Ursina](https://www.ursinaengine.org/).
+VoxelBlock is a hybrid game engine/tooling project with:
+- `C++` native engine modules (renderer/runtime/physics/material/scene scaffolds)
+- `C#` Avalonia editor (`VoxelBlock.Editor`)
+- `Lua` modding scripts (`mods/`)
+- `Python` tooling scripts (`tools/`)
 
-```bash
-g++
-```
+Current direction:
+- `Tier A` Lightweight 2D pipeline (pixel-art / RPG-like workflows)
+- `Tier B` Unified pipeline for 3D + HD-2D / 2.5D
 
 ## Build (Windows)
-# Requirements
-- .NET SDK 8
-- CMake 3.22
-- Visual Studio 2022 Build Tools
-- Ninja (Optional)
+
+### Requirements
+- `.NET SDK 8`
+- `CMake >= 3.22`
+- `Visual Studio 2022 Build Tools` (Desktop development with C++)
+- `Ninja` (optional)
+
+Notes:
+- Prefer `Visual Studio 2022` generator for CMake on Windows.
+- `MSYS/MinGW + CMake` may be slow or hang during configure on some machines.
+
+## Build Editor EXE (Recommended)
+
+Debug build:
+
+```powershell
+dotnet build VoxelBlock.Editor\VoxelBlock.Editor.csproj -c Debug
+```
+
+Publish Release EXE:
+
+```powershell
+dotnet publish VoxelBlock.Editor\VoxelBlock.Editor.csproj `
+  -c Release `
+  -r win-x64 `
+  --self-contained false
+```
+
+Output:
+- `VoxelBlock.Editor\bin\Release\net8.0\win-x64\publish\VoxelBlock.Editor.exe`
+
+## Build Native C++ Targets
+
+Configure (MSVC / Visual Studio generator):
+
+```powershell
+cmake -S . -B build-msvc -G "Visual Studio 17 2022" -A x64 `
+  -DVB_BUILD_RENDERER=OFF `
+  -DVB_BUILD_CAPI=OFF `
+  -DVB_BUILD_PYTHON=OFF `
+  -DVB_BUILD_TESTS=OFF `
+  -DVB_BUILD_GAME=OFF
+```
+
+Build the native scaffold framework target:
+
+```powershell
+cmake --build build-msvc --config Release --target voxelblock_native_framework
+```
+
+Notes:
+- `voxelblock_native_framework` is a native C++ target for validating new modules (`physics/material/scene/runtime`) without requiring the full legacy core checkout.
+- Some targets intentionally `skip` in CMake if required files are missing (placeholder targets are used to keep configure/build behavior explicit).
 
 ## Project Structure
 
-```
+```text
 VoxelBlock/
-├─ CMakeLists.txt                          # Native build (C++ engine/modules)
-├─ VoxelBlock.sln                          # .NET solution (Editor + Bridge)
+├─ CMakeLists.txt
+├─ VoxelBlock.sln
+├─ README.md
+├─ .gitattributes
 │
-├─ thirdparty/     
+├─ thirdparty/                        # External SDK/backend drop-ins (e.g. physics)
 │  ├─ README.md
-│  └─ physics/     
+│  └─ physics/
 │     └─ README.md
 │
-├─ include/      
+├─ include/                           # Native public headers (C++)
 │  ├─ engine.hpp
 │  ├─ api/
-│  │  └─ voxelblock_capi.h        
+│  ├─ ecs/
+│  ├─ material/                       # Material / PBR-ready scaffolds
+│  ├─ physics/                        # Physics abstraction + null backend
 │  ├─ renderer/
-│  │  ├─ camera.hpp
-│  │  ├─ mesh.hpp
-│  │  ├─ renderer.hpp
-│  │  ├─ shader.hpp
-│  │  └─ window.hpp
-│  ├─ scripting/
-│  │  └─ lua_runtime.hpp
-│  └─ ecs/    
-│     ├─ entity.hpp
-│     ├─ components.hpp
-│     ├─ registry.hpp
-│     └─ systems.hpp
+│  ├─ runtime/                        # 2D/3D/post/ECS runtime pipeline scaffolds
+│  ├─ scene/                          # Scene document / serializer scaffolds
+│  └─ scripting/
 │
-├─ src/  
+├─ src/                               # Native sources (C++)
 │  ├─ engine.cpp
 │  ├─ api/
-│  │  └─ voxelblock_capi.cpp
+│  ├─ material/
+│  ├─ physics/
+│  │  └─ backends/
 │  ├─ renderer/
-│  │  ├─ camera.cpp
-│  │  ├─ mesh.cpp
-│  │  ├─ renderer.cpp
-│  │  ├─ shader.cpp
-│  │  └─ window.cpp
+│  ├─ runtime/
+│  ├─ scene/
 │  └─ scripting/
-│     └─ lua_runtime.cpp
 │
 ├─ bindings/
 │  └─ python/
-│     └─ voxelblock_py.cpp 
+│     └─ voxelblock_py.cpp            # C++ binding layer for Python (pybind11)
 │
-├─ VoxelBlock.Bridge/ 
+├─ VoxelBlock.Bridge/                 # C# native bridge (P/Invoke)
 │  ├─ VoxelBlock.Bridge.csproj
 │  ├─ VoxelBlockNative.cs
 │  └─ VoxelBlockEngine.cs
 │
-├─ VoxelBlock.Editor/  
+├─ VoxelBlock.Editor/                 # Avalonia Editor
 │  ├─ VoxelBlock.Editor.csproj
 │  ├─ Program.cs
 │  ├─ App.axaml
@@ -73,27 +118,83 @@ VoxelBlock/
 │  ├─ MainWindow.axaml
 │  ├─ MainWindow.axaml.cs
 │  ├─ Controls.cs
-│  ├─ SceneEditing.cs   
-│  ├─ ProjectPipelines.cs    
-│  └─ OpenGlViewport.cs              
+│  ├─ SceneEditing.cs
+│  └─ ProjectPipelines.cs
 │
-├─ mods/                               
-   └─ mystuff.lua                               
-
+├─ mods/                              # Lua mods / examples
+│  ├─ mystuff.lua
+│  └─ examples/
+│     ├─ init.lua
+│     ├─ rpg_events.lua
+│     ├─ hd2d_lighting.lua
+│     └─ pbr_lite_2d.lua
+│
+├─ tools/                             # Python tooling / automation
+│  ├─ README.md
+│  ├─ voxelblock_tool.py
+│  ├─ vb_common.py
+│  ├─ vb_assets.py
+│  ├─ vb_scene.py
+│  └─ vb_export.py
+│
+├─ experiments/                       # Non-production / legacy prototypes
+│  ├─ README.md
+│  └─ avalonia/
+│     └─ OpenGlViewport.cs
+│
+└─ docs/
+   ├─ API_CSharp_Quickstart_TH.md
+   ├─ API_CSharp_Quickstart_EN.md
+   ├─ EDITOR_WORKFLOW_TH.md
+   ├─ EDITOR_WORKFLOW_EN.md
+   ├─ PIPELINE_TIERS_MATRIX_TH.md
+   └─ PIPELINE_TIERS_MATRIX_EN.md
 ```
 
-## Adding Mods
+## Lua Mods
 
-Drop any `.lua` file into the `mods/` folder. The following API is exposed to Lua:
+Drop `.lua` files into `mods/` (or `mods/examples/` as references).
 
-```lua
-print("hello from lua")
-place_block(x, y, z, "stone")   -- place a block at world coords
+Examples included:
+- RPG event hooks
+- HD-2D lighting preset helpers
+- PBR-lite 2D lit-sprite material registration examples
+
+Notes:
+- Lua in this repo is intended for runtime scripting / modding.
+- It is **not** the old Python `lupa` flow.
+
+## Python Tools
+
+`tools/` contains lightweight Python scripts for automation and content workflows.
+
+Examples:
+
+```powershell
+python tools\voxelblock_tool.py info
+python tools\voxelblock_tool.py validate-layout
+python tools\vb_scene.py demo_scene --width 32 --height 32 --block stone
+python tools\vb_assets.py --dry-run
+python tools\vb_export.py Build1
 ```
 
-Requires `lupa` (`pip install lupa`). If not installed, mods are silently skipped.
+## Docs
 
-## Adding Textures
+See `docs/` for:
+- C# API quickstart (TH/EN)
+- Editor workflow (TH/EN)
+- Tier A / Tier B pipeline architecture matrix (TH/EN)
 
-Place `.png` files in `assets/textures/`. To use a custom texture on a block,
-update `BLOCK_COLORS` in `core/voxel.py` and pass the texture name to `Voxel`.
+## Troubleshooting
+
+### CMake configure is very slow or hangs (Windows/MSYS)
+
+Use Visual Studio generator instead of MSYS/MinGW:
+
+```powershell
+cmake -S . -B build-msvc -G "Visual Studio 17 2022" -A x64
+```
+
+### NuGet warning `NU1900`
+
+This is usually a vulnerability-feed/network issue and does not necessarily block `dotnet build`.
