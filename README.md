@@ -55,14 +55,14 @@ cmake -S . -B build-msvc -G "Visual Studio 17 2022" -A x64 `
   -DVB_BUILD_GAME=OFF
 ```
 
-Build the native scaffold framework target:
+Build the native scaffold target:
 
 ```powershell
 cmake --build build-msvc --config Release --target voxelblock_native_framework
 ```
 
 Notes:
-- `voxelblock_native_framework` is a native C++ target for validating new modules (`physics/material/scene/runtime`) without requiring the full legacy core checkout.
+- `voxelblock_native` is a native C++ target for validating new modules (`physics/material/scene/runtime`) without requiring the full legacy core checkout.
 - Some targets intentionally `skip` in CMake if required files are missing (placeholder targets are used to keep configure/build behavior explicit).
 
 ## Project Structure
