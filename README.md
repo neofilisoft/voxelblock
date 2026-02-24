@@ -6,18 +6,12 @@ A Minecraft-inspired voxel engine built with [Ursina](https://www.ursinaengine.o
 g++
 ```
 
-## Controls
-
-| Key | Action |
-|-----|--------|
-| WASD | Move |
-| Mouse | Look |
-| Left Click | Place block |
-| Right Click | Remove block |
-| 1–6 | Select block type |
-| Scroll Wheel | Cycle block type |
-| E | Open / close inventory |
-| Escape | Close inventory / quit |
+## Build (Windows)
+# Requirements
+.NET SDK 8
+CMake 3.22
+Visual Studio 2022 Build Tools
+Ninja (Optional)
 
 ## Block Types
 
