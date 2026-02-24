@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AssemblyName>VoxelBlock.Editor</AssemblyName>
+    <RootNamespace>VoxelBlock.Editor</RootNamespace>
+    <!--
+      Use reflection-based bindings (not compiled).
+      Allows int/float → string conversion without explicit converters.
+    -->
+    <AvaloniaUseCompiledBindings>false</AvaloniaUseCompiledBindings>
+  </PropertyGroup>
+  <ItemGroup>
+    <!--
+      Avalonia 11: OpenGL support is INCLUDED in Avalonia.Desktop.
+      DO NOT add Avalonia.OpenGL as a separate package — it doesn't exist.
+      ReactiveUI and CommunityToolkit removed: we use plain INotifyPropertyChanged.
+    -->
+    <PackageReference Include="Avalonia"               Version="11.1.3" />
+    <PackageReference Include="Avalonia.Desktop"       Version="11.1.3" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.1.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VoxelBlock.Bridge\VoxelBlock.Bridge.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Legacy experimental GL viewport; not used by MainWindow (ViewportPanel is used instead). -->
+    <Compile Remove="OpenGlViewport.cs" />
+  </ItemGroup>
+</Project>

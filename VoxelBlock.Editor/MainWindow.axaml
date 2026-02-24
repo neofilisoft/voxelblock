@@ -1,0 +1,224 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:VoxelBlock.Editor"
+        x:Class="VoxelBlock.Editor.MainWindow"
+        Title="VoxelBlock Editor"
+        Width="1400" Height="900"
+        Background="#1E1E1E">
+
+  <DockPanel>
+
+    <!-- ── Menu ──────────────────────────────────────────────────────────── -->
+    <Menu DockPanel.Dock="Top" Background="#2D2D2D">
+      <MenuItem Header="_File">
+        <MenuItem Header="_New World"   Command="{Binding NewWorldCommand}"/>
+        <MenuItem Header="_Open World…" Command="{Binding OpenWorldCommand}"/>
+        <MenuItem Header="_Save"        Command="{Binding SaveCommand}"/>
+        <Separator/>
+        <MenuItem Header="Save _Scene"  Command="{Binding SaveSceneCommand}"/>
+        <MenuItem Header="Load Sc_ene"  Command="{Binding LoadSceneCommand}"/>
+        <MenuItem Header="_Export Game…" Command="{Binding ExportStandaloneCommand}"/>
+        <Separator/>
+        <MenuItem Header="E_xit"        Command="{Binding ExitCommand}"/>
+      </MenuItem>
+      <MenuItem Header="_World">
+        <MenuItem Header="World Settings…" Command="{Binding WorldSettingsCommand}"/>
+        <MenuItem Header="Reload Mods"     Command="{Binding ReloadModsCommand}"/>
+      </MenuItem>
+      <MenuItem Header="_View">
+        <MenuItem Header="Block Registry"  Command="{Binding ShowBlocksCommand}"/>
+        <MenuItem Header="Lua Console"     Command="{Binding ShowLuaConsoleCommand}"/>
+        <MenuItem Header="Render Stats"    Command="{Binding ShowStatsCommand}"/>
+      </MenuItem>
+    </Menu>
+
+    <!-- FIX ④: Avalonia 11 has no <StatusBar> control → use <Border> instead -->
+    <Border DockPanel.Dock="Bottom" Background="#007ACC" Height="24">
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
+        <TextBlock Text="{Binding StatusText}" Foreground="White"    Margin="8,0"/>
+        <TextBlock Text="|"                    Foreground="#005A9E"/>
+        <TextBlock Text="{Binding StatsText}"  Foreground="#AADDFF"  Margin="0,0,8,0"/>
+      </StackPanel>
+    </Border>
+
+    <!-- ── Main 3-panel layout ────────────────────────────────────────────── -->
+    <Grid ColumnDefinitions="220,*,280">
+
+      <!-- ── Left: Block Palette ──────────────────────────────────────────── -->
+      <DockPanel Grid.Column="0" Background="#252526">
+        <TextBlock DockPanel.Dock="Top" Text="BLOCKS" FontSize="11" FontWeight="Bold"
+                   Foreground="#888" Margin="10,8,0,4"/>
+        <TextBox DockPanel.Dock="Top" Watermark="🔍 Filter…"
+                 Text="{Binding BlockFilter}" Background="#3C3C3C"
+                 Foreground="White" Margin="6,0,6,4" CornerRadius="4"/>
+
+        <!-- FIX ⑦: Avalonia 11 uses ItemsSource= not Items= -->
+        <ListBox ItemsSource="{Binding FilteredBlocks}"
+                 SelectedItem="{Binding SelectedBlock}"
+                 Background="Transparent" Margin="4">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="8" Margin="2">
+                <Border Width="16" Height="16" CornerRadius="3"
+                        Background="{Binding ColorBrush}"/>
+                <TextBlock Text="{Binding Name}" Foreground="#DDD" FontSize="13"/>
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <!-- ── Centre: Viewport + Toolbar ──────────────────────────────────── -->
+      <Grid Grid.Column="1">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0" Background="#1E1E1E">
+          <TabItem Header="Viewport" Foreground="#CCC">
+            <!-- FIX ②③⑤⑥: ViewportPanel replaces broken OpenGlViewport -->
+            <local:ViewportPanel EngineHandle="{Binding EngineHandle}"/>
+          </TabItem>
+          <TabItem Header="Scene Builder" Foreground="#CCC">
+            <Grid Margin="8" RowDefinitions="Auto,*">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Scene" Foreground="#AAA" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding SceneEditor.SceneName}" Width="120"
+                         Background="#3C3C3C" Foreground="White"/>
+                <TextBlock Text="Y" Foreground="#AAA" VerticalAlignment="Center"/>
+                <TextBox Text="{Binding SceneEditor.LayerYText}" Width="48"
+                         Background="#3C3C3C" Foreground="White"/>
+                <CheckBox Content="Erase"
+                          IsChecked="{Binding SceneEditor.EraseMode}"
+                          Margin="4,0,0,0"/>
+                <TextBlock Text="{Binding SceneEditor.ActiveToolLabel}"
+                           Foreground="#7FD1FF" VerticalAlignment="Center"/>
+              </StackPanel>
+              <local:SceneGridEditor Grid.Row="1" Margin="0,8,0,0"
+                                     Scene="{Binding SceneEditor}"/>
+            </Grid>
+          </TabItem>
+        </TabControl>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6"
+                    Background="#2D2D2D" Height="36">
+          <Button Content="▶ Play"    Command="{Binding PlayCommand}"    Margin="6,4"/>
+          <Button Content="⏹ Stop"    Command="{Binding StopCommand}"    Margin="0,4"/>
+          <Separator/>
+          <Button Content="Save Scene" Command="{Binding SaveSceneCommand}" Margin="0,4"/>
+          <Button Content="Load Scene" Command="{Binding LoadSceneCommand}" Margin="0,4"/>
+          <Button Content="Clear Scene" Command="{Binding ClearSceneCommand}" Margin="0,4"/>
+          <Separator/>
+          <TextBlock Text="Seed:" Foreground="#AAA" VerticalAlignment="Center" Margin="4,0"/>
+          <TextBox   Text="{Binding SeedText}" Width="90" Background="#3C3C3C"
+                     Foreground="White" VerticalAlignment="Center"/>
+          <Button Content="Regenerate" Command="{Binding RegenerateCommand}" Margin="4,4"/>
+        </StackPanel>
+      </Grid>
+
+      <!-- ── Right: Properties / Lua / Stats ──────────────────────────────── -->
+      <TabControl Grid.Column="2" Background="#252526">
+
+        <!-- Properties tab -->
+        <TabItem Header="Properties" Foreground="#CCC">
+          <ScrollViewer Padding="10">
+            <StackPanel Spacing="8">
+              <TextBlock Text="WORLD" FontWeight="Bold" Foreground="#888" FontSize="11"/>
+              <local:LabeledField Label="Name"          Value="{Binding WorldName}"/>
+              <!-- FIX ⑧: SeedText is already string; no conversion needed -->
+              <local:LabeledField Label="Seed"          Value="{Binding SeedText}" IsReadOnly="True"/>
+              <!-- FIX ⑧: ChunkCountText is a pre-formatted string property -->
+              <local:LabeledField Label="Chunks Loaded" Value="{Binding ChunkCountText}" IsReadOnly="True"/>
+
+              <Separator Margin="0,4"/>
+              <TextBlock Text="SELECTED BLOCK" FontWeight="Bold" Foreground="#888" FontSize="11"/>
+              <local:LabeledField Label="Block"    Value="{Binding SelectedBlockName}" IsReadOnly="True"/>
+              <!-- FIX ⑨: HardnessText is pre-formatted string, not float -->
+              <local:LabeledField Label="Hardness" Value="{Binding SelectedBlockHardness}" IsReadOnly="True"/>
+
+              <Separator Margin="0,4"/>
+              <TextBlock Text="INVENTORY" FontWeight="Bold" Foreground="#888" FontSize="11"/>
+
+              <!-- FIX ⑦: ItemsSource= -->
+              <ItemsControl ItemsSource="{Binding InventoryItems}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Grid ColumnDefinitions="*,60" Margin="0,2">
+                      <TextBlock Grid.Column="0" Text="{Binding Name}"      Foreground="#DDD"/>
+                      <!-- FIX ⑧: CountText is pre-formatted string not int -->
+                      <TextBlock Grid.Column="1" Text="{Binding CountText}" Foreground="#AAA"
+                                 HorizontalAlignment="Right"/>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <!-- Lua Console tab -->
+        <TabItem Header="Lua Console" Foreground="#CCC">
+          <DockPanel Margin="6">
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                        Spacing="6" Margin="0,4,0,0">
+              <TextBox Text="{Binding LuaInput}"
+                       Watermark="print('hello')"
+                       Background="#3C3C3C" Foreground="White"
+                       Width="210"/>
+              <Button Content="Run ▶" Command="{Binding RunLuaCommand}" Width="60"/>
+            </StackPanel>
+            <ScrollViewer>
+              <TextBlock Text="{Binding LuaOutput}"
+                         Foreground="#90EE90" FontFamily="Courier New"
+                         FontSize="12" TextWrapping="Wrap" Padding="4"/>
+            </ScrollViewer>
+          </DockPanel>
+        </TabItem>
+
+        <!-- Stats tab -->
+        <TabItem Header="Stats" Foreground="#CCC">
+          <StackPanel Spacing="4" Margin="10">
+            <!-- FIX ⑧: all stats exposed as pre-formatted string properties -->
+            <local:StatRow Label="Chunks Drawn" Value="{Binding Stats.ChunksDrawnText}"/>
+            <local:StatRow Label="Draw Calls"   Value="{Binding Stats.DrawCallsText}"/>
+            <local:StatRow Label="Triangles"    Value="{Binding Stats.TrianglesText}"/>
+            <local:StatRow Label="Frame Time"   Value="{Binding Stats.FrameMsFormatted}"/>
+            <local:StatRow Label="FPS"          Value="{Binding Stats.FpsFormatted}"/>
+          </StackPanel>
+        </TabItem>
+
+        <TabItem Header="Assets" Foreground="#CCC">
+          <DockPanel Margin="8">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6">
+              <Button Content="Process Assets" Command="{Binding ProcessAssetsCommand}"/>
+              <TextBlock Text="{Binding AssetPipelineStatus}" Foreground="#9ad" VerticalAlignment="Center"/>
+            </StackPanel>
+            <ListBox ItemsSource="{Binding AssetItems}" Margin="0,8,0,0" Background="Transparent">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Grid ColumnDefinitions="90,70,*" Margin="0,2">
+                    <TextBlock Grid.Column="0" Text="{Binding Kind}" Foreground="#9ad"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Status}" Foreground="#bfb"/>
+                    <TextBlock Grid.Column="2" Text="{Binding Source}" Foreground="#ddd" TextWrapping="Wrap"/>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </DockPanel>
+        </TabItem>
+
+        <TabItem Header="Export" Foreground="#CCC">
+          <StackPanel Margin="10" Spacing="8">
+            <local:LabeledField Label="Build Name" Value="{Binding ExportBuildName}"/>
+            <TextBlock Text="One-click pack: scenes + processed assets + mods + exe (if found)."
+                       Foreground="#888" TextWrapping="Wrap"/>
+            <Button Content="Export Standalone" Command="{Binding ExportStandaloneCommand}" Width="150"/>
+            <TextBlock Text="{Binding ExportStatus}" Foreground="#AADDFF" TextWrapping="Wrap"/>
+          </StackPanel>
+        </TabItem>
+
+      </TabControl>
+    </Grid>
+  </DockPanel>
+</Window>
