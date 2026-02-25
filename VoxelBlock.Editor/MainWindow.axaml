@@ -3,238 +3,358 @@
         xmlns:local="clr-namespace:VoxelBlock.Editor"
         x:Class="VoxelBlock.Editor.MainWindow"
         Title="VoxelBlock Editor"
-        Width="1400" Height="900"
+        Width="1500" Height="920"
         Background="#1E1E1E">
 
   <DockPanel>
-
-    <!-- â”€â”€ Menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
     <Menu DockPanel.Dock="Top" Background="#2D2D2D">
       <MenuItem Header="_File">
-        <MenuItem Header="_New World"   Command="{Binding NewWorldCommand}"/>
-        <MenuItem Header="_Open Worldâ€¦" Command="{Binding OpenWorldCommand}"/>
-        <MenuItem Header="_Save"        Command="{Binding SaveCommand}"/>
+        <MenuItem Header="_New World" Command="{Binding NewWorldCommand}"/>
+        <MenuItem Header="_Open World..." Command="{Binding OpenWorldCommand}"/>
+        <MenuItem Header="_Save" Command="{Binding SaveCommand}"/>
         <Separator/>
-        <MenuItem Header="Save _Scene"  Command="{Binding SaveSceneCommand}"/>
-        <MenuItem Header="Load Sc_ene"  Command="{Binding LoadSceneCommand}"/>
-        <MenuItem Header="_Export Gameâ€¦" Command="{Binding ExportStandaloneCommand}"/>
+        <MenuItem Header="Save _Scene" Command="{Binding SaveSceneCommand}"/>
+        <MenuItem Header="Load Sc_ene" Command="{Binding LoadSceneCommand}"/>
+        <MenuItem Header="_Export Game..." Command="{Binding ExportStandaloneCommand}"/>
         <Separator/>
-        <MenuItem Header="E_xit"        Command="{Binding ExitCommand}"/>
+        <MenuItem Header="E_xit" Command="{Binding ExitCommand}"/>
       </MenuItem>
       <MenuItem Header="_World">
-        <MenuItem Header="World Settingsâ€¦" Command="{Binding WorldSettingsCommand}"/>
-        <MenuItem Header="Reload Mods"     Command="{Binding ReloadModsCommand}"/>
+        <MenuItem Header="World Settings..." Command="{Binding WorldSettingsCommand}"/>
+        <MenuItem Header="Reload Mods" Command="{Binding ReloadModsCommand}"/>
       </MenuItem>
       <MenuItem Header="_View">
-        <MenuItem Header="Block Registry"  Command="{Binding ShowBlocksCommand}"/>
-        <MenuItem Header="Lua Console"     Command="{Binding ShowLuaConsoleCommand}"/>
-        <MenuItem Header="Render Stats"    Command="{Binding ShowStatsCommand}"/>
+        <MenuItem Header="Block Registry" Command="{Binding ShowBlocksCommand}"/>
+        <MenuItem Header="Lua Console" Command="{Binding ShowLuaConsoleCommand}"/>
+        <MenuItem Header="Render Stats" Command="{Binding ShowStatsCommand}"/>
       </MenuItem>
     </Menu>
+
+    <Border DockPanel.Dock="Top" Background="#252526" BorderBrush="#333" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,16,Auto,Auto,Auto,*,Auto" Height="42" Margin="6,4">
+        <Button Grid.Column="0" Content="Select" Command="{Binding ToolSelectCommand}" Margin="0,0,6,0"/>
+        <Button Grid.Column="1" Content="Paint" Command="{Binding ToolPaintCommand}" Margin="0,0,6,0"/>
+        <Button Grid.Column="2" Content="Erase" Command="{Binding ToolEraseCommand}" Margin="0,0,6,0"/>
+        <Button Grid.Column="3" Content="Raise" Command="{Binding ToolRaiseTerrainCommand}" Margin="0,0,6,0"/>
+        <Button Grid.Column="4" Content="Lower" Command="{Binding ToolLowerTerrainCommand}" Margin="0,0,6,0"/>
+        <Button Grid.Column="5" Content="Flatten" Command="{Binding ToolFlattenTerrainCommand}" Margin="0,0,6,0"/>
+
+        <TextBlock Grid.Column="7" Text="Mode:" Foreground="#AAA" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="8" Text="{Binding EditorModeLabel}" Foreground="#7FD1FF" VerticalAlignment="Center" Margin="6,0,10,0"/>
+        <TextBlock Grid.Column="9" Text="{Binding TerrainToolLabel}" Foreground="#BEE3A8" VerticalAlignment="Center"/>
+
+        <StackPanel Grid.Column="11" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+          <Button Content="Play" Command="{Binding PlayCommand}" MinWidth="62"/>
+          <Button Content="Stop" Command="{Binding StopCommand}" MinWidth="62"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
     <Border DockPanel.Dock="Bottom" Background="#007ACC" Height="24">
       <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="12">
-        <TextBlock Text="{Binding StatusText}" Foreground="White"    Margin="8,0"/>
-        <TextBlock Text="|"                    Foreground="#005A9E"/>
-        <TextBlock Text="{Binding StatsText}"  Foreground="#AADDFF"  Margin="0,0,8,0"/>
+        <TextBlock Text="{Binding StatusText}" Foreground="White" Margin="8,0"/>
+        <TextBlock Text="|" Foreground="#005A9E"/>
+        <TextBlock Text="{Binding StatsText}" Foreground="#AADDFF" Margin="0,0,8,0"/>
       </StackPanel>
     </Border>
 
-    <!-- â”€â”€ Main 3-panel layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-    <Grid ColumnDefinitions="220,*,280">
+    <Grid RowDefinitions="*,5,260">
+      <Grid Grid.Row="0" ColumnDefinitions="260,5,*,5,320">
+        <Border Grid.Column="0" Background="#202225" BorderBrush="#333" BorderThickness="0,0,1,0">
+          <TabControl Background="#202225">
+            <TabItem Header="Hierarchy" Foreground="#CCC">
+              <DockPanel Margin="6">
+                <TextBox DockPanel.Dock="Top" Text="{Binding HierarchySearchText}" Watermark="Search hierarchy..."
+                         Background="#2F3136" Foreground="White" Margin="0,0,0,6"/>
+                <ListBox ItemsSource="{Binding HierarchyItems}" Background="Transparent">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="6" Margin="{Binding Indent}">
+                        <TextBlock Text="{Binding Icon}" Foreground="#8FB1FF"/>
+                        <TextBlock Text="{Binding Name}" Foreground="#DDD"/>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </DockPanel>
+            </TabItem>
 
-      <!-- â”€â”€ Left: Block Palette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <DockPanel Grid.Column="0" Background="#252526">
-        <TextBlock DockPanel.Dock="Top" Text="BLOCKS" FontSize="11" FontWeight="Bold"
-                   Foreground="#888" Margin="10,8,0,4"/>
-        <TextBox DockPanel.Dock="Top" Watermark="ðŸ” Filterâ€¦"
-                 Text="{Binding BlockFilter}" Background="#3C3C3C"
-                 Foreground="White" Margin="6,0,6,4" CornerRadius="4"/>
-        <ListBox ItemsSource="{Binding FilteredBlocks}"
-                 SelectedItem="{Binding SelectedBlock}"
-                 Background="Transparent" Margin="4">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <StackPanel Orientation="Horizontal" Spacing="8" Margin="2">
-                <Border Width="16" Height="16" CornerRadius="3"
-                        Background="{Binding ColorBrush}"/>
-                <TextBlock Text="{Binding Name}" Foreground="#DDD" FontSize="13"/>
-              </StackPanel>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </DockPanel>
+            <TabItem Header="Outliner" Foreground="#CCC">
+              <DockPanel Margin="6">
+                <TextBox DockPanel.Dock="Top" Text="{Binding OutlinerSearchText}" Watermark="Search outliner..."
+                         Background="#2F3136" Foreground="White" Margin="0,0,0,6"/>
+                <ListBox ItemsSource="{Binding OutlinerItems}" Background="Transparent">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
+                        <TextBlock Grid.Column="0" Text="{Binding Icon}" Foreground="#9AD" Margin="0,0,6,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="#DDD"/>
+                        <TextBlock Grid.Column="2" Text="{Binding Kind}" Foreground="#888"/>
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </DockPanel>
+            </TabItem>
 
-      <!-- â”€â”€ Centre: Viewport + Toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <Grid Grid.Column="1">
-        <Grid.RowDefinitions>
-          <RowDefinition Height="*"/>
-          <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+            <TabItem Header="Blocks" Foreground="#CCC">
+              <DockPanel Margin="6">
+                <TextBlock DockPanel.Dock="Top" Text="BLOCK PALETTE" FontSize="11" FontWeight="Bold" Foreground="#888" Margin="4,2,0,4"/>
+                <TextBox DockPanel.Dock="Top" Text="{Binding BlockFilter}" Watermark="Filter blocks..."
+                         Background="#2F3136" Foreground="White" Margin="0,0,0,6"/>
+                <ListBox ItemsSource="{Binding FilteredBlocks}" SelectedItem="{Binding SelectedBlock}" Background="Transparent">
+                  <ListBox.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Orientation="Horizontal" Spacing="8" Margin="2">
+                        <Border Width="16" Height="16" CornerRadius="3" Background="{Binding ColorBrush}"/>
+                        <TextBlock Text="{Binding Name}" Foreground="#DDD" FontSize="13"/>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ListBox.ItemTemplate>
+                </ListBox>
+              </DockPanel>
+            </TabItem>
+          </TabControl>
+        </Border>
 
-        <TabControl Grid.Row="0" Background="#1E1E1E">
-          <TabItem Header="Viewport" Foreground="#CCC">
-            <local:ViewportPanel EngineHandle="{Binding EngineHandle}"/>
-          </TabItem>
-          <TabItem Header="Scene Builder" Foreground="#CCC">
-            <Grid Margin="8" RowDefinitions="Auto,*">
-              <StackPanel Orientation="Horizontal" Spacing="8">
-                <TextBlock Text="Scene" Foreground="#AAA" VerticalAlignment="Center"/>
-                <TextBox Text="{Binding SceneEditor.SceneName}" Width="120"
-                         Background="#3C3C3C" Foreground="White"/>
-                <TextBlock Text="Y" Foreground="#AAA" VerticalAlignment="Center"/>
-                <TextBox Text="{Binding SceneEditor.LayerYText}" Width="48"
-                         Background="#3C3C3C" Foreground="White"/>
-                <CheckBox Content="Erase"
-                          IsChecked="{Binding SceneEditor.EraseMode}"
-                          Margin="4,0,0,0"/>
-                <TextBlock Text="{Binding SceneEditor.ActiveToolLabel}"
-                           Foreground="#7FD1FF" VerticalAlignment="Center"/>
-              </StackPanel>
-              <local:SceneGridEditor Grid.Row="1" Margin="0,8,0,0"
-                                     Scene="{Binding SceneEditor}"/>
+        <GridSplitter Grid.Column="1" Width="5" Background="#2A2A2A"/>
+
+        <Grid Grid.Column="2" RowDefinitions="*,Auto">
+          <TabControl Grid.Row="0" Background="#1E1E1E">
+            <TabItem Header="Viewport" Foreground="#CCC">
+              <local:ViewportPanel EngineHandle="{Binding EngineHandle}"/>
+            </TabItem>
+
+            <TabItem Header="Scene Builder" Foreground="#CCC">
+              <Grid Margin="8" RowDefinitions="Auto,*">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="Scene" Foreground="#AAA" VerticalAlignment="Center"/>
+                  <TextBox Text="{Binding SceneEditor.SceneName}" Width="120" Background="#3C3C3C" Foreground="White"/>
+                  <TextBlock Text="Y" Foreground="#AAA" VerticalAlignment="Center"/>
+                  <TextBox Text="{Binding SceneEditor.LayerYText}" Width="48" Background="#3C3C3C" Foreground="White"/>
+                  <CheckBox Content="Erase" IsChecked="{Binding SceneEditor.EraseMode}" Margin="4,0,0,0"/>
+                  <TextBlock Text="{Binding SceneEditor.ActiveToolLabel}" Foreground="#7FD1FF" VerticalAlignment="Center"/>
+                  <Button Content="Save Scene" Command="{Binding SaveSceneCommand}"/>
+                  <Button Content="Load Scene" Command="{Binding LoadSceneCommand}"/>
+                  <Button Content="Clear" Command="{Binding ClearSceneCommand}"/>
+                </StackPanel>
+                <local:SceneGridEditor Grid.Row="1" Margin="0,8,0,0" Scene="{Binding SceneEditor}"/>
+              </Grid>
+            </TabItem>
+          </TabControl>
+
+          <Border Grid.Row="1" Background="#2D2D2D" BorderBrush="#333" BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" Height="36">
+              <Button Grid.Column="0" Content="Save World" Command="{Binding SaveCommand}" Margin="6,4,0,4"/>
+              <Button Grid.Column="1" Content="Process Assets" Command="{Binding ProcessAssetsCommand}" Margin="6,4,0,4"/>
+              <Button Grid.Column="2" Content="Export" Command="{Binding ExportStandaloneCommand}" Margin="6,4,0,4"/>
+              <TextBlock Grid.Column="3" Text="Seed" Foreground="#AAA" VerticalAlignment="Center" Margin="12,0,6,0"/>
+              <TextBox Grid.Column="4" Text="{Binding SeedText}" Width="90" Background="#3C3C3C" Foreground="White" VerticalAlignment="Center"/>
+              <Button Grid.Column="5" Content="Regenerate" Command="{Binding RegenerateCommand}" Margin="6,4,0,4"/>
+              <TextBlock Grid.Column="6" Text="Brush" Foreground="#AAA" VerticalAlignment="Center" Margin="12,0,6,0"/>
+              <TextBlock Grid.Column="7" Text="{Binding TerrainToolLabel}" Foreground="#BEE3A8" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="8" Text="{Binding AssetPipelineStatus}" Foreground="#9AD" VerticalAlignment="Center" Margin="12,0,8,0" TextTrimming="CharacterEllipsis"/>
             </Grid>
-          </TabItem>
-        </TabControl>
+          </Border>
+        </Grid>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6"
-                    Background="#2D2D2D" Height="36">
-          <Button Content="â–¶ Play"    Command="{Binding PlayCommand}"    Margin="6,4"/>
-          <Button Content="â¹ Stop"    Command="{Binding StopCommand}"    Margin="0,4"/>
-          <Separator/>
-          <Button Content="Save Scene" Command="{Binding SaveSceneCommand}" Margin="0,4"/>
-          <Button Content="Load Scene" Command="{Binding LoadSceneCommand}" Margin="0,4"/>
-          <Button Content="Clear Scene" Command="{Binding ClearSceneCommand}" Margin="0,4"/>
-          <Separator/>
-          <TextBlock Text="Seed:" Foreground="#AAA" VerticalAlignment="Center" Margin="4,0"/>
-          <TextBox   Text="{Binding SeedText}" Width="90" Background="#3C3C3C"
-                     Foreground="White" VerticalAlignment="Center"/>
-          <Button Content="Regenerate" Command="{Binding RegenerateCommand}" Margin="4,4"/>
-        </StackPanel>
+        <GridSplitter Grid.Column="3" Width="5" Background="#2A2A2A"/>
+
+        <Border Grid.Column="4" Background="#202225" BorderBrush="#333" BorderThickness="1,0,0,0">
+          <TabControl Background="#202225">
+            <TabItem Header="Inspector" Foreground="#CCC">
+              <DockPanel Margin="8">
+                <TextBlock DockPanel.Dock="Top" Text="{Binding InspectorTitle}" Foreground="#AADDFF" FontWeight="Bold" Margin="0,0,0,8"/>
+                <ScrollViewer>
+                  <ItemsControl ItemsSource="{Binding InspectorSections}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel Margin="0,0,0,10">
+                          <TextBlock Text="{Binding Title}" Foreground="#888" FontWeight="Bold" FontSize="11" Margin="0,0,0,4"/>
+                          <ItemsControl ItemsSource="{Binding Fields}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate>
+                                <Grid ColumnDefinitions="110,*" Margin="0,2">
+                                  <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="#AAA" VerticalAlignment="Center"/>
+                                  <TextBlock Grid.Column="1" Text="{Binding Value}" Foreground="#DDD" TextWrapping="Wrap"/>
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </DockPanel>
+            </TabItem>
+
+            <TabItem Header="Properties" Foreground="#CCC">
+              <ScrollViewer Padding="10">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="WORLD" FontWeight="Bold" Foreground="#888" FontSize="11"/>
+                  <local:LabeledField Label="Name" Value="{Binding WorldName}"/>
+                  <local:LabeledField Label="Seed" Value="{Binding SeedText}" IsReadOnly="True"/>
+                  <local:LabeledField Label="Chunks Loaded" Value="{Binding ChunkCountText}" IsReadOnly="True"/>
+                  <Separator Margin="0,4"/>
+                  <TextBlock Text="SELECTED BLOCK" FontWeight="Bold" Foreground="#888" FontSize="11"/>
+                  <local:LabeledField Label="Block" Value="{Binding SelectedBlockName}" IsReadOnly="True"/>
+                  <local:LabeledField Label="Hardness" Value="{Binding SelectedBlockHardness}" IsReadOnly="True"/>
+                  <Separator Margin="0,4"/>
+                  <TextBlock Text="INVENTORY" FontWeight="Bold" Foreground="#888" FontSize="11"/>
+                  <ItemsControl ItemsSource="{Binding InventoryItems}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Grid ColumnDefinitions="*,60" Margin="0,2">
+                          <TextBlock Grid.Column="0" Text="{Binding Name}" Foreground="#DDD"/>
+                          <TextBlock Grid.Column="1" Text="{Binding CountText}" Foreground="#AAA" HorizontalAlignment="Right"/>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="Stats" Foreground="#CCC">
+              <StackPanel Spacing="4" Margin="10">
+                <local:StatRow Label="Chunks Drawn" Value="{Binding Stats.ChunksDrawnText}"/>
+                <local:StatRow Label="Draw Calls" Value="{Binding Stats.DrawCallsText}"/>
+                <local:StatRow Label="Triangles" Value="{Binding Stats.TrianglesText}"/>
+                <local:StatRow Label="Frame Time" Value="{Binding Stats.FrameMsFormatted}"/>
+                <local:StatRow Label="FPS" Value="{Binding Stats.FpsFormatted}"/>
+              </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Export" Foreground="#CCC">
+              <StackPanel Margin="10" Spacing="8">
+                <local:LabeledField Label="Build Name" Value="{Binding ExportBuildName}"/>
+                <TextBlock Text="One-click pack: scenes + processed assets + mods + exe (if found)." Foreground="#888" TextWrapping="Wrap"/>
+                <Button Content="Export Standalone" Command="{Binding ExportStandaloneCommand}" Width="160"/>
+                <TextBlock Text="{Binding ExportStatus}" Foreground="#AADDFF" TextWrapping="Wrap"/>
+              </StackPanel>
+            </TabItem>
+          </TabControl>
+        </Border>
       </Grid>
 
-      <!-- â”€â”€ Right: Properties / Lua / Stats â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
-      <TabControl Grid.Column="2" Background="#252526">
+      <GridSplitter Grid.Row="1" Height="5" Background="#2A2A2A"/>
 
-        <!-- Properties tab -->
-        <TabItem Header="Properties" Foreground="#CCC">
-          <ScrollViewer Padding="10">
-            <StackPanel Spacing="8">
-              <TextBlock Text="WORLD" FontWeight="Bold" Foreground="#888" FontSize="11"/>
-              <local:LabeledField Label="Name"          Value="{Binding WorldName}"/>
-              <local:LabeledField Label="Seed"          Value="{Binding SeedText}" IsReadOnly="True"/>
-              <local:LabeledField Label="Chunks Loaded" Value="{Binding ChunkCountText}" IsReadOnly="True"/>
-
-              <Separator Margin="0,4"/>
-              <TextBlock Text="SELECTED BLOCK" FontWeight="Bold" Foreground="#888" FontSize="11"/>
-              <local:LabeledField Label="Block"    Value="{Binding SelectedBlockName}" IsReadOnly="True"/>
-              <local:LabeledField Label="Hardness" Value="{Binding SelectedBlockHardness}" IsReadOnly="True"/>
-
-              <Separator Margin="0,4"/>
-              <TextBlock Text="INVENTORY" FontWeight="Bold" Foreground="#888" FontSize="11"/>
-              <ItemsControl ItemsSource="{Binding InventoryItems}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <Grid ColumnDefinitions="*,60" Margin="0,2">
-                      <TextBlock Grid.Column="0" Text="{Binding Name}"      Foreground="#DDD"/>
-                      <TextBlock Grid.Column="1" Text="{Binding CountText}" Foreground="#AAA"
-                                 HorizontalAlignment="Right"/>
-                    </Grid>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
-          </ScrollViewer>
-        </TabItem>
-
-        <!-- Lua Console tab -->
-        <TabItem Header="Lua Console" Foreground="#CCC">
-          <DockPanel Margin="6">
-            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
-                        Spacing="6" Margin="0,4,0,0">
-              <TextBox Text="{Binding LuaInput}"
-                       Watermark="print('hello')"
-                       Background="#3C3C3C" Foreground="White"
-                       Width="210"/>
-              <Button Content="Run â–¶" Command="{Binding RunLuaCommand}" Width="60"/>
-            </StackPanel>
-            <ScrollViewer>
-              <TextBlock Text="{Binding LuaOutput}"
-                         Foreground="#90EE90" FontFamily="Courier New"
-                         FontSize="12" TextWrapping="Wrap" Padding="4"/>
-            </ScrollViewer>
-          </DockPanel>
-        </TabItem>
-
-        <TabItem Header="C# Scripts" Foreground="#CCC">
+      <Grid Grid.Row="2" ColumnDefinitions="1.3*,5,*">
+        <Border Grid.Column="0" Background="#202225" BorderBrush="#333" BorderThickness="0,1,1,0">
           <DockPanel Margin="8">
-            <StackPanel DockPanel.Dock="Top" Spacing="6">
-              <TextBlock Text="{Binding CSharpScriptStatus}" Foreground="#9ad" TextWrapping="Wrap"/>
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <TextBlock Text="Script" Foreground="#AAA" VerticalAlignment="Center"/>
-                <TextBox Text="{Binding CSharpScriptInput}" Width="160"
-                         Background="#3C3C3C" Foreground="White"/>
-                <Button Content="Attach" Command="{Binding AttachCSharpScriptCommand}" Width="70"/>
-                <Button Content="Tick" Command="{Binding TickCSharpScriptsCommand}" Width="60"/>
-                <Button Content="Reset" Command="{Binding ResetCSharpScriptsCommand}" Width="60"/>
-              </StackPanel>
-              <ItemsControl ItemsSource="{Binding RegisteredCSharpScripts}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <TextBlock Text="{Binding .}" Foreground="#BBB" FontSize="12"/>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
-            <ScrollViewer Margin="0,8,0,0">
-              <TextBlock Text="{Binding CSharpScriptOutput}" Foreground="#BEE3A8"
-                         FontFamily="Courier New" FontSize="12"
-                         TextWrapping="Wrap" Padding="4"/>
-            </ScrollViewer>
+            <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+              <TextBlock Grid.Column="0" Text="Content Browser" Foreground="#CCC" FontWeight="Bold" VerticalAlignment="Center"/>
+              <TextBox Grid.Column="1" Text="{Binding ContentBrowserSearchText}" Watermark="Search content..." Background="#2F3136" Foreground="White" Margin="8,0"/>
+              <TextBlock Grid.Column="2" Text="{Binding ContentBrowserStatus}" Foreground="#9AD" VerticalAlignment="Center"/>
+            </Grid>
+
+            <Grid ColumnDefinitions="220,5,*">
+              <Border Grid.Column="0" Background="#1C1D21" BorderBrush="#333" BorderThickness="1">
+                <DockPanel Margin="6">
+                  <TextBlock DockPanel.Dock="Top" Text="Folders" Foreground="#888" FontWeight="Bold" FontSize="11" Margin="0,0,0,6"/>
+                  <ListBox ItemsSource="{Binding ContentFolders}" SelectedItem="{Binding SelectedContentFolder}" Background="Transparent">
+                    <ListBox.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="6" Margin="{Binding Indent}">
+                          <TextBlock Text="DIR" Foreground="#A88FFF"/>
+                          <TextBlock Text="{Binding Name}" Foreground="#DDD"/>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ListBox.ItemTemplate>
+                  </ListBox>
+                </DockPanel>
+              </Border>
+
+              <GridSplitter Grid.Column="1" Width="5" Background="#2A2A2A"/>
+
+              <Border Grid.Column="2" Background="#1C1D21" BorderBrush="#333" BorderThickness="1">
+                <ScrollViewer Margin="6">
+                  <ItemsControl ItemsSource="{Binding ContentAssets}">
+                    <ItemsControl.ItemsPanel>
+                      <ItemsPanelTemplate>
+                        <WrapPanel/>
+                      </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Width="118" Height="118" Margin="4" Background="#25262B" BorderBrush="#3A3C42" BorderThickness="1" CornerRadius="6">
+                          <Grid RowDefinitions="64,Auto,Auto">
+                            <Border Margin="10,10,10,6" Background="{Binding PreviewBrush}" CornerRadius="4"/>
+                            <TextBlock Grid.Row="1" Text="{Binding Name}" Foreground="#DDD" FontSize="12"
+                                       Margin="8,0,8,0" TextTrimming="CharacterEllipsis" HorizontalAlignment="Center"/>
+                            <TextBlock Grid.Row="2" Text="{Binding Kind}" Foreground="#888" FontSize="11"
+                                       Margin="8,0,8,8" HorizontalAlignment="Center"/>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Border>
+            </Grid>
           </DockPanel>
-        </TabItem>
+        </Border>
 
-        <!-- Stats tab -->
-        <TabItem Header="Stats" Foreground="#CCC">
-          <StackPanel Spacing="4" Margin="10">
-            <local:StatRow Label="Chunks Drawn" Value="{Binding Stats.ChunksDrawnText}"/>
-            <local:StatRow Label="Draw Calls"   Value="{Binding Stats.DrawCallsText}"/>
-            <local:StatRow Label="Triangles"    Value="{Binding Stats.TrianglesText}"/>
-            <local:StatRow Label="Frame Time"   Value="{Binding Stats.FrameMsFormatted}"/>
-            <local:StatRow Label="FPS"          Value="{Binding Stats.FpsFormatted}"/>
-          </StackPanel>
-        </TabItem>
+        <GridSplitter Grid.Column="1" Width="5" Background="#2A2A2A"/>
 
-        <TabItem Header="Assets" Foreground="#CCC">
-          <DockPanel Margin="8">
-            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6">
-              <Button Content="Process Assets" Command="{Binding ProcessAssetsCommand}"/>
-              <TextBlock Text="{Binding AssetPipelineStatus}" Foreground="#9ad" VerticalAlignment="Center"/>
-            </StackPanel>
-            <ListBox ItemsSource="{Binding AssetItems}" Margin="0,8,0,0" Background="Transparent">
-              <ListBox.ItemTemplate>
-                <DataTemplate>
-                  <Grid ColumnDefinitions="90,70,*" Margin="0,2">
-                    <TextBlock Grid.Column="0" Text="{Binding Kind}" Foreground="#9ad"/>
-                    <TextBlock Grid.Column="1" Text="{Binding Status}" Foreground="#bfb"/>
-                    <TextBlock Grid.Column="2" Text="{Binding Source}" Foreground="#ddd" TextWrapping="Wrap"/>
-                  </Grid>
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-          </DockPanel>
-        </TabItem>
+        <Border Grid.Column="2" Background="#202225" BorderBrush="#333" BorderThickness="1,1,0,0">
+          <TabControl Background="#202225">
+            <TabItem Header="Console / Output" Foreground="#CCC">
+              <DockPanel Margin="8">
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+                  <TextBlock Grid.Column="0" Text="Output" Foreground="#CCC" FontWeight="Bold" VerticalAlignment="Center"/>
+                  <TextBox Grid.Column="1" Text="{Binding OutputSearchText}" Watermark="Filter output..." Background="#2F3136" Foreground="White" Margin="8,0"/>
+                  <TextBlock Grid.Column="2" Text="{Binding OutputStatus}" Foreground="#9AD" VerticalAlignment="Center"/>
+                </Grid>
+                <ScrollViewer>
+                  <TextBlock Text="{Binding OutputLog}" Foreground="#DADADA" FontFamily="Courier New"
+                             FontSize="12" TextWrapping="Wrap" Padding="4"/>
+                </ScrollViewer>
+              </DockPanel>
+            </TabItem>
 
-        <TabItem Header="Export" Foreground="#CCC">
-          <StackPanel Margin="10" Spacing="8">
-            <local:LabeledField Label="Build Name" Value="{Binding ExportBuildName}"/>
-            <TextBlock Text="One-click pack: scenes + processed assets + mods + exe (if found)."
-                       Foreground="#888" TextWrapping="Wrap"/>
-            <Button Content="Export Standalone" Command="{Binding ExportStandaloneCommand}" Width="150"/>
-            <TextBlock Text="{Binding ExportStatus}" Foreground="#AADDFF" TextWrapping="Wrap"/>
-          </StackPanel>
-        </TabItem>
+            <TabItem Header="Lua Console" Foreground="#CCC">
+              <DockPanel Margin="8">
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0">
+                  <TextBox Text="{Binding LuaInput}" Watermark="print('hello')" Background="#3C3C3C" Foreground="White" Width="240"/>
+                  <Button Content="Run" Command="{Binding RunLuaCommand}" Width="60"/>
+                </StackPanel>
+                <ScrollViewer>
+                  <TextBlock Text="{Binding LuaOutput}" Foreground="#90EE90" FontFamily="Courier New"
+                             FontSize="12" TextWrapping="Wrap" Padding="4"/>
+                </ScrollViewer>
+              </DockPanel>
+            </TabItem>
 
-      </TabControl>
+            <TabItem Header="C# Scripts" Foreground="#CCC">
+              <DockPanel Margin="8">
+                <StackPanel DockPanel.Dock="Top" Spacing="6">
+                  <TextBlock Text="{Binding CSharpScriptStatus}" Foreground="#9AD" TextWrapping="Wrap"/>
+                  <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Script" Foreground="#AAA" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding CSharpScriptInput}" Width="160" Background="#3C3C3C" Foreground="White"/>
+                    <Button Content="Attach" Command="{Binding AttachCSharpScriptCommand}" Width="70"/>
+                    <Button Content="Tick" Command="{Binding TickCSharpScriptsCommand}" Width="60"/>
+                    <Button Content="Reset" Command="{Binding ResetCSharpScriptsCommand}" Width="60"/>
+                  </StackPanel>
+                  <ItemsControl ItemsSource="{Binding RegisteredCSharpScripts}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding .}" Foreground="#BBB" FontSize="12"/>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+                <ScrollViewer Margin="0,8,0,0">
+                  <TextBlock Text="{Binding CSharpScriptOutput}" Foreground="#BEE3A8" FontFamily="Courier New"
+                             FontSize="12" TextWrapping="Wrap" Padding="4"/>
+                </ScrollViewer>
+              </DockPanel>
+            </TabItem>
+          </TabControl>
+        </Border>
+      </Grid>
     </Grid>
   </DockPanel>
 </Window>
