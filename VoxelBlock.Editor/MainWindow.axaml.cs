@@ -12,6 +12,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
 using VoxelBlock.Bridge;
+using VoxelBlock.Bridge.Scripting;
 
 namespace VoxelBlock.Editor
 {
@@ -45,12 +46,15 @@ namespace VoxelBlock.Editor
         private VoxelBlockEngine? _engine;
         private DispatcherTimer?  _ticker;
         private DispatcherTimer?  _assetTicker;
-        private bool              _engineReady; // FIX â‘¬
+        private bool              _engineReady;
         private bool              _assetPipelineBusy;
         private long              _assetFingerprint;
         private readonly StringBuilder _luaLog = new();
+        private readonly StringBuilder _csharpScriptLog = new();
         private readonly AssetPipelineService _assetPipeline = new();
         private readonly StandaloneExportService _exportService = new();
+        private readonly VoxelScriptContext _scriptContext;
+        private readonly CSharpScriptRuntime _csharpScripts;
 
         private string _statusText          = "Initialisingâ€¦";
         private string _statsText           = "";
@@ -60,6 +64,9 @@ namespace VoxelBlock.Editor
         private string _blockFilter         = "";
         private string _luaInput            = "";
         private string _luaOutput           = "";
+        private string _csharpScriptInput   = "EditorHeartbeat";
+        private string _csharpScriptOutput  = "";
+        private string _csharpScriptStatus  = "C# scripting runtime ready";
         private string _selectedBlockName    = "";       
         private string _selectedBlockHardness = "1.0"; 
         private string _assetPipelineStatus = "Idle";
@@ -78,6 +85,9 @@ namespace VoxelBlock.Editor
                                      set { Set(ref _blockFilter, value); RefreshBlockList(); } }
         public string LuaInput     { get => _luaInput;     set => Set(ref _luaInput,     value); }
         public string LuaOutput    { get => _luaOutput;    set => Set(ref _luaOutput,    value); }
+        public string CSharpScriptInput  { get => _csharpScriptInput;  set => Set(ref _csharpScriptInput, value); }
+        public string CSharpScriptOutput { get => _csharpScriptOutput; set => Set(ref _csharpScriptOutput, value); }
+        public string CSharpScriptStatus { get => _csharpScriptStatus; set => Set(ref _csharpScriptStatus, value); }
 
         // expose as string so AXAML TextBox/LabeledField can bind directly
         public string SelectedBlockName     { get => _selectedBlockName;     set => Set(ref _selectedBlockName,     value); }
@@ -109,6 +119,7 @@ namespace VoxelBlock.Editor
         public ObservableCollection<BlockViewModel> FilteredBlocks { get; } = new();
         public ObservableCollection<InventoryItem>  InventoryItems { get; } = new();
         public ObservableCollection<AssetPipelineItemView> AssetItems { get; } = new();
+        public ObservableCollection<string> RegisteredCSharpScripts { get; } = new();
 
         public ICommand NewWorldCommand       { get; }
         public ICommand OpenWorldCommand      { get; }
@@ -118,6 +129,9 @@ namespace VoxelBlock.Editor
         public ICommand StopCommand           { get; }
         public ICommand RegenerateCommand     { get; }
         public ICommand RunLuaCommand         { get; }
+        public ICommand AttachCSharpScriptCommand { get; }
+        public ICommand TickCSharpScriptsCommand  { get; }
+        public ICommand ResetCSharpScriptsCommand { get; }
         public ICommand ReloadModsCommand     { get; }
         public ICommand WorldSettingsCommand  { get; }
         public ICommand ShowBlocksCommand     { get; }
@@ -131,6 +145,10 @@ namespace VoxelBlock.Editor
 
         public MainViewModel()
         {
+            _scriptContext = new VoxelScriptContext(() => _engine, _appendCSharpScriptLog);
+            _csharpScripts = new CSharpScriptRuntime(_scriptContext);
+            _registerDefaultCSharpScripts();
+
             NewWorldCommand       = new RelayCommand(_newWorld);
             OpenWorldCommand      = new RelayCommand(() => StatusText = "Open â€” file dialog (Phase 4)");
             SaveCommand           = new RelayCommand(_save);
@@ -139,6 +157,9 @@ namespace VoxelBlock.Editor
             StopCommand           = new RelayCommand(() => StatusText = "â¹ Stopped");
             RegenerateCommand     = new RelayCommand(_regenerate);
             RunLuaCommand         = new RelayCommand(_runLua);
+            AttachCSharpScriptCommand = new RelayCommand(_attachCSharpScript);
+            TickCSharpScriptsCommand  = new RelayCommand(() => _runCSharpScriptTick(1f / 60f, true));
+            ResetCSharpScriptsCommand = new RelayCommand(_resetCSharpScripts);
             ReloadModsCommand     = new RelayCommand(_reloadMods);
             WorldSettingsCommand  = new RelayCommand(() => StatusText = "World Settings");
             ShowBlocksCommand     = new RelayCommand(() => StatusText = "Block Registry");
@@ -218,6 +239,8 @@ namespace VoxelBlock.Editor
                 return;
             }
 
+            _runCSharpScriptTick(1f / 60f, false);
+
             _statTimer += 1f / 60f;
             if (_statTimer < 0.5f) return;
             _statTimer = 0f;
@@ -281,6 +304,49 @@ namespace VoxelBlock.Editor
             int n = _engine.LoadMods("mods");
             _refreshBlockRegistry();
             StatusText = $"ðŸ”„ {n} mod(s) loaded";
+        }
+
+        private void _attachCSharpScript()
+        {
+            string name = (CSharpScriptInput ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                CSharpScriptStatus = "Enter a C# script name";
+                return;
+            }
+
+            if (_csharpScripts.TryAttach(name, out var instance, out var error))
+            {
+                CSharpScriptStatus = $"Attached C# script: {name} ({_csharpScripts.ActiveScriptCount} active)";
+                _appendCSharpScriptLog($"attached {name} ({instance!.InstanceId.ToString()[..8]})");
+            }
+            else
+            {
+                CSharpScriptStatus = error ?? "Attach failed";
+                _appendCSharpScriptLog(CSharpScriptStatus);
+            }
+        }
+
+        private void _runCSharpScriptTick(float dt, bool manual)
+        {
+            try
+            {
+                _csharpScripts.Tick(dt);
+                if (manual)
+                    CSharpScriptStatus = $"C# scripts ticked ({_csharpScripts.ActiveScriptCount} active)";
+            }
+            catch (Exception ex)
+            {
+                CSharpScriptStatus = $"C# script runtime error: {ex.Message}";
+                _appendCSharpScriptLog(CSharpScriptStatus);
+            }
+        }
+
+        private void _resetCSharpScripts()
+        {
+            _csharpScripts.Reset();
+            CSharpScriptStatus = "C# scripts reset";
+            _appendCSharpScriptLog("reset all scripts");
         }
 
         private void _saveScene()
@@ -396,6 +462,7 @@ namespace VoxelBlock.Editor
             {
                 _luaLog.AppendLine($"[{name}]");
                 LuaOutput = _luaLog.ToString();
+                _csharpScripts.DispatchEngineEvent(name, json);
                 if (name is "on_place" or "on_destroy") _refreshInventory();
             });
         }
@@ -498,8 +565,25 @@ namespace VoxelBlock.Editor
             _ticker?.Stop();
             _assetTicker?.Stop();
             _engineReady = false;
+            try { _csharpScripts.Reset(); } catch { }
             try { _engine?.Quit(); } catch { /* ignore */ }
             try { _engine?.Dispose(); } catch { /* ignore */ }
+        }
+
+        private void _registerDefaultCSharpScripts()
+        {
+            _csharpScripts.Register<EditorHeartbeatScript>("EditorHeartbeat");
+            _csharpScripts.Register<LuaBridgeDemoScript>("LuaBridgeDemo");
+            RegisteredCSharpScripts.Clear();
+            foreach (var name in _csharpScripts.RegisteredScriptNames)
+                RegisteredCSharpScripts.Add(name);
+            CSharpScriptOutput = "Registered: " + string.Join(", ", RegisteredCSharpScripts);
+        }
+
+        private void _appendCSharpScriptLog(string message)
+        {
+            _csharpScriptLog.AppendLine(message);
+            CSharpScriptOutput = _csharpScriptLog.ToString();
         }
     }
 
@@ -577,3 +661,4 @@ namespace VoxelBlock.Editor
         public event EventHandler? CanExecuteChanged { add { } remove { } }
     }
 }
+
