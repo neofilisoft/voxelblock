@@ -7,8 +7,8 @@ VoxelBlock is a hybrid tooling project with:
 - `Python` tooling scripts (`tools/`)
 
 Current direction:
-- `Tier A` Lightweight 2D pipeline (pixel-art / RPG-like workflows)
-- `Tier B` Unified pipeline for 3D + HD-2D / 2.5D
+- `2D` Lightweight 2D pipeline (pixel-art / RPG-like workflows)
+- `3D` Unified pipeline for 3D + HD-2D / 2.5D
 
 ## Build (Windows)
 
